@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Invoice Profesional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background-color: white;
+            }
+            .invoice-container {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                min-height: auto !important;
+            }
+        }
+
+        .input-field {
+            @apply w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all;
+        }
+
+        .label-text {
+            @apply block text-sm font-medium text-gray-700 mb-1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="no-print flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Invoice Cloud</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <p class="text-gray-600 text-sm italic">Data tersinkronisasi dengan Google Cloud secara real-time.</p>
+                    <span id="cloud-status" class="flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">
+                        <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                        Connecting...
+                    </span>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button id="btn-save" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Simpan ke Cloud
+                </button>
+                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Cetak / PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Sidebar -->
+            <div class="no-print lg:col-span-4 space-y-6">
+                <!-- Drafts -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="font-bold text-lg text-blue-600">Draf Tersimpan</h2>
+                        <button onclick="createNewInvoice()" class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded font-bold text-gray-600">Baru +</button>
+                    </div>
+                    <div id="draft-list" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                        <p class="text-xs text-gray-400 italic text-center py-4">Menghubungkan ke Cloud...</p>
+                    </div>
+                </div>
+
+                <!-- Basic Info -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="font-bold text-lg mb-4 text-blue-600 border-b pb-2">Informasi Invoice</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label-text">No. Invoice</label>
+                            <input type="text" id="inv-no" class="input-field" oninput="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="label-text">Tanggal</label>
+                            <input type="date" id="inv-date" class="input-field" oninput="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="label-text">Diskon Keseluruhan (%)</label>
+                            <input type="number" id="discount-rate" class="input-field" value="0" min="0" oninput="calculateTotals()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- People Info -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="font-bold text-lg mb-4 text-blue-600 border-b pb-2">Pihak Terkait</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="label-text text-blue-500">Pihak 1 (Pengirim)</label>
+                            <textarea id="from-info" class="input-field h-20 text-xs mb-2" placeholder="Detail Perusahaan..." oninput="updatePreview()"></textarea>
+                            <input type="text" id="from-label" class="input-field text-xs mb-1" placeholder="Label TTD (Hormat Kami)" oninput="updatePreview()">
+                            <input type="text" id="from-name" class="input-field text-xs" placeholder="Nama Penanggung Jawab" oninput="updatePreview()">
+                        </div>
+                        <div class="pt-4 border-t">
+                            <label class="label-text text-emerald-500">Pihak 2 (Penerima)</label>
+                            <textarea id="to-info" class="input-field h-20 text-xs mb-2" placeholder="Detail Customer..." oninput="updatePreview()"></textarea>
+                            <input type="text" id="to-label" class="input-field text-xs mb-1" placeholder="Label TTD (Diterima Oleh)" oninput="updatePreview()">
+                            <input type="text" id="to-name" class="input-field text-xs" placeholder="Nama Penerima" oninput="updatePreview()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Area -->
+            <div class="lg:col-span-8">
+                <div id="invoice-paper" class="invoice-container bg-white p-8 md:p-12 rounded-xl shadow-lg border border-gray-200 min-h-[1056px] flex flex-col transition-all">
+                    <!-- Invoice Header -->
+                    <div class="flex justify-between items-start mb-12">
+                        <div>
+                            <h2 class="text-4xl font-extrabold text-blue-600 italic tracking-tighter">INVOICE</h2>
+                            <p class="text-gray-500 font-medium mt-1" id="p-inv-no">#---</p>
+                        </div>
+                        <div class="text-right max-w-xs">
+                            <div id="p-from" class="text-xs text-gray-700 whitespace-pre-line font-medium italic">---</div>
+                        </div>
+                    </div>
+
+                    <!-- Client Info -->
+                    <div class="grid grid-cols-2 gap-8 mb-10">
+                        <div>
+                            <h3 class="text-[10px] uppercase font-bold text-gray-400 mb-2 border-b tracking-widest">Tagihan Untuk:</h3>
+                            <div id="p-to" class="text-gray-800 whitespace-pre-line font-semibold text-sm">---</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs space-y-1">
+                                <p><span class="text-gray-400">Tanggal Terbit:</span> <span id="p-date" class="text-gray-800 font-bold">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="flex-grow">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-y-2 border-gray-100">
+                                    <th class="py-3 px-4 text-[10px] uppercase font-bold text-gray-500">Deskripsi</th>
+                                    <th class="py-3 px-2 text-[10px] uppercase font-bold text-gray-500 text-center w-16">Qty</th>
+                                    <th class="py-3 px-2 text-[10px] uppercase font-bold text-gray-500 text-right w-32">Harga</th>
+                                    <th class="py-3 px-4 text-[10px] uppercase font-bold text-gray-500 text-right w-32">Total</th>
+                                    <th class="no-print py-3 px-2 w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-body"></tbody>
+                        </table>
+                        <button onclick="addItem()" class="no-print mt-4 text-blue-600 hover:text-blue-800 font-bold text-xs flex items-center gap-1">
+                            + TAMBAH BARIS MANUAL
+                        </button>
+                        <p class="no-print text-[10px] text-gray-400 mt-1 italic">* Baris baru akan muncul otomatis saat Anda mengetik deskripsi di baris terakhir.</p>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="mt-8 border-t-2 border-gray-50 pt-6">
+                        <div class="flex justify-end">
+                            <div class="w-full md:w-80 space-y-2">
+                                <div class="flex justify-between text-xs text-gray-500 px-4">
+                                    <span>Subtotal:</span>
+                                    <span id="p-subtotal">Rp 0</span>
+                                </div>
+                                <div class="flex justify-between text-xs text-red-500 px-4 italic">
+                                    <span id="p-discount-label">Diskon (0%):</span>
+                                    <span id="p-discount-amount">- Rp 0</span>
+                                </div>
+                                <div class="flex justify-between text-xl font-black text-gray-900 bg-blue-50 p-4 rounded-lg mt-2">
+                                    <span>TOTAL:</span>
+                                    <span id="p-total" class="text-blue-600">Rp 0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Signature Area -->
+                    <div class="mt-16 grid grid-cols-2 gap-12 text-center">
+                        <div>
+                            <p id="p-to-label-display" class="text-xs text-gray-400 mb-20 italic">Diterima Oleh,</p>
+                            <div class="border-b border-gray-300 mx-auto w-40"></div>
+                            <p id="p-to-name-display" class="mt-2 font-bold text-gray-800 text-sm">( ............................ )</p>
+                        </div>
+                        <div>
+                            <p id="p-from-label-display" class="text-xs text-gray-400 mb-20 italic">Hormat Kami,</p>
+                            <div class="border-b border-gray-300 mx-auto w-40"></div>
+                            <p id="p-from-name-display" class="mt-2 font-bold text-gray-800 text-sm">( ............................ )</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-8 py-3 rounded-full text-sm font-bold opacity-0 transition-all duration-300 pointer-events-none z-[200]"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, query, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const userProvidedConfig = {
+            apiKey: "AIzaSyAycsHtCJTx5vFzt-Ts7C4b-TC6XPg0Jew",
+            authDomain: "cloud-invoice-31eb4.firebaseapp.com",
+            projectId: "cloud-invoice-31eb4",
+            storageBucket: "cloud-invoice-31eb4.firebasestorage.app",
+            messagingSenderId: "581810444397",
+            appId: "1:581810444397:web:3c677edd12f5258ed34764",
+            measurementId: "G-7GS11PL2N6"
+        };
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userProvidedConfig;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let analytics;
+        try { analytics = getAnalytics(app); } catch (e) { console.warn("Analytics not supported."); }
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cloud-invoice-app';
+        let currentUser = null;
+        let currentDraftId = null;
+        let items = [{ id: Date.now(), description: '', quantity: 1, price: 0 }];
+
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Error:", err);
+                updateCloudStatus('error');
+            }
+        };
+
+        initAuth();
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                updateCloudStatus('connected');
+                listenToDrafts();
+            } else {
+                updateCloudStatus('offline');
+            }
+        });
+
+        function updateCloudStatus(status) {
+            const el = document.getElementById('cloud-status');
+            const dot = el.querySelector('span');
+            if (status === 'connected') {
+                el.className = "flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
+                el.lastChild.textContent = "Terhubung ke Cloud";
+            } else if (status === 'error') {
+                el.className = "flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-600";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-red-500";
+                el.lastChild.textContent = "Koneksi Error";
+            } else {
+                el.className = "flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-gray-200 text-gray-500";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-gray-400";
+                el.lastChild.textContent = "Offline";
+            }
+        }
+
+        function listenToDrafts() {
+            if (!currentUser) return;
+            const path = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices');
+            onSnapshot(path, (snap) => {
+                const list = document.getElementById('draft-list');
+                list.innerHTML = '';
+                if (snap.empty) {
+                    list.innerHTML = '<p class="text-[10px] text-gray-400 text-center py-4 italic">Belum ada draf di Google Cloud.</p>';
+                    return;
+                }
+                snap.docs.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const div = document.createElement('div');
+                    div.className = `group flex items-center justify-between p-2.5 rounded-lg text-xs border cursor-pointer transition-all ${currentDraftId === docSnap.id ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-gray-50 hover:bg-white border-transparent'}`;
+                    div.innerHTML = `
+                        <div class="flex-grow truncate pr-2" onclick="loadDraft('${docSnap.id}')">
+                            <span class="font-bold block">${data.invoiceNo || 'Draft Tanpa No'}</span>
+                            <span class="opacity-60 text-[10px]">${data.toName || 'Customer: ---'}</span>
+                        </div>
+                        <button onclick="deleteDraft('${docSnap.id}')" class="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        window.createNewInvoice = () => {
+            currentDraftId = null;
+            document.getElementById('inv-no').value = 'INV/' + new Date().getFullYear() + '/' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
+            document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('from-info').value = '';
+            document.getElementById('from-label').value = 'Hormat Kami,';
+            document.getElementById('from-name').value = '';
+            document.getElementById('to-info').value = '';
+            document.getElementById('to-label').value = 'Diterima Oleh,';
+            document.getElementById('to-name').value = '';
+            document.getElementById('discount-rate').value = 0;
+            items = [{ id: Date.now(), description: '', quantity: 1, price: 0 }];
+            updatePreview();
+            showToast("Invoice dibersihkan.");
+        };
+
+        window.saveDraft = async () => {
+            if (!currentUser) return showToast("Tidak dapat menyimpan (Offline)");
+            const id = currentDraftId || crypto.randomUUID();
+            const data = {
+                invoiceNo: document.getElementById('inv-no').value,
+                date: document.getElementById('inv-date').value,
+                fromInfo: document.getElementById('from-info').value,
+                fromLabel: document.getElementById('from-label').value,
+                fromName: document.getElementById('from-name').value,
+                toInfo: document.getElementById('to-info').value,
+                toLabel: document.getElementById('to-label').value,
+                toName: document.getElementById('to-name').value,
+                discountRate: parseFloat(document.getElementById('discount-rate').value) || 0,
+                items: items,
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id);
+                await setDoc(docRef, data);
+                currentDraftId = id;
+                showToast("Draf berhasil diunggah ke Google Cloud!");
+            } catch (e) {
+                showToast("Gagal menyimpan ke Google Cloud.");
+            }
+        };
+
+        window.loadDraft = (id) => {
+            const path = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id);
+            onSnapshot(path, (snap) => {
+                if (!snap.exists()) return;
+                const d = snap.data();
+                currentDraftId = id;
+                document.getElementById('inv-no').value = d.invoiceNo || '';
+                document.getElementById('inv-date').value = d.date || '';
+                document.getElementById('from-info').value = d.fromInfo || '';
+                document.getElementById('from-label').value = d.fromLabel || 'Hormat Kami,';
+                document.getElementById('from-name').value = d.fromName || '';
+                document.getElementById('to-info').value = d.toInfo || '';
+                document.getElementById('to-label').value = d.toLabel || 'Diterima Oleh,';
+                document.getElementById('to-name').value = d.toName || '';
+                document.getElementById('discount-rate').value = d.discountRate || 0;
+                items = d.items || [];
+                updatePreview();
+                showToast("Draf dimuat.");
+            }, { onlyOnce: true });
+        };
+
+        window.deleteDraft = async (id) => {
+            if (!confirm("Hapus data dari Cloud?")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id));
+                if (currentDraftId === id) createNewInvoice();
+                showToast("Data dihapus.");
+            } catch (e) {
+                showToast("Gagal menghapus.");
+            }
+        };
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.opacity = '1';
+            t.style.bottom = '32px';
+            setTimeout(() => {
+                t.style.opacity = '0';
+                t.style.bottom = '24px';
+            }, 3000);
+        }
+
+        function formatCurrency(n) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+        }
+
+        window.addItem = () => {
+            items.push({ id: Date.now(), description: '', quantity: 1, price: 0 });
+            renderItems();
+        };
+
+        window.removeItem = (id) => {
+            if (items.length <= 1) return;
+            items = items.filter(i => i.id !== id);
+            renderItems();
+        };
+
+        // Modifikasi updateItem untuk deteksi baris terakhir
+        window.updateItem = (id, field, val) => {
+            const item = items.find(i => i.id === id);
+            if (item) {
+                item[field] = (field === 'quantity' || field === 'price') ? (parseFloat(val) || 0) : val;
+                
+                // Fitur: Otomatis tambah baris jika mengetik deskripsi di baris terakhir
+                if (field === 'description' && val.trim() !== '') {
+                    const index = items.indexOf(item);
+                    if (index === items.length - 1) {
+                        // Tambah baris baru tapi jangan render ulang seluruhnya agar tidak hilang fokus
+                        // Kita panggil addItem tapi modifikasi renderItems agar tetap efisien
+                        items.push({ id: Date.now(), description: '', quantity: 1, price: 0 });
+                        renderItems(true); // Param true untuk menandakan penambahan baris
+                    }
+                }
+
+                calculateTotals();
+                const totalEl = document.getElementById(`row-total-${id}`);
+                if (totalEl) totalEl.textContent = formatCurrency(item.quantity * item.price);
+            }
+        };
+
+        window.renderItems = (keepFocus = false) => {
+            const tbody = document.getElementById('items-body');
+            
+            // Simpan ID elemen yang sedang aktif agar fokus tidak hilang saat render ulang
+            const activeId = document.activeElement ? document.activeElement.id : null;
+            const selectionStart = document.activeElement ? document.activeElement.selectionStart : null;
+
+            tbody.innerHTML = '';
+            items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-50';
+                tr.innerHTML = `
+                    <td class="py-4 px-4">
+                        <input type="text" id="input-desc-${item.id}" value="${item.description}" placeholder="Pekerjaan..." oninput="updateItem(${item.id}, 'description', this.value)" class="w-full bg-transparent outline-none border-b border-transparent focus:border-blue-200 no-print text-sm">
+                        <span class="print-only text-xs">${item.description || '-'}</span>
+                    </td>
+                    <td class="py-4 px-2">
+                        <input type="number" id="input-qty-${item.id}" value="${item.quantity}" oninput="updateItem(${item.id}, 'quantity', this.value)" class="w-full text-center bg-transparent outline-none no-print text-sm">
+                        <span class="print-only text-center block text-xs">${item.quantity}</span>
+                    </td>
+                    <td class="py-4 px-2">
+                        <input type="number" id="input-price-${item.id}" value="${item.price}" oninput="updateItem(${item.id}, 'price', this.value)" class="w-full text-right bg-transparent outline-none no-print text-sm">
+                        <span class="print-only text-right block text-xs">${formatCurrency(item.price)}</span>
+                    </td>
+                    <td class="py-4 px-4 text-right font-bold text-gray-700 text-xs">
+                        <span id="row-total-${item.id}">${formatCurrency(item.quantity * item.price)}</span>
+                    </td>
+                    <td class="no-print py-4 px-2 text-right">
+                        <button onclick="removeItem(${item.id})" class="text-gray-200 hover:text-red-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Kembalikan fokus ke elemen sebelumnya agar user bisa terus mengetik tanpa terganggu
+            if (activeId) {
+                const el = document.getElementById(activeId);
+                if (el) {
+                    el.focus();
+                    if (selectionStart !== null && el.setSelectionRange) {
+                        el.setSelectionRange(selectionStart, selectionStart);
+                    }
+                }
+            }
+            
+            calculateTotals();
+        };
+
+        window.calculateTotals = () => {
+            const sub = items.reduce((s, i) => s + (i.quantity * i.price), 0);
+            const rate = parseFloat(document.getElementById('discount-rate').value) || 0;
+            const disc = (sub * rate) / 100;
+            const total = sub - disc;
+
+            document.getElementById('p-subtotal').textContent = formatCurrency(sub);
+            document.getElementById('p-discount-label').textContent = `Diskon (${rate}%):`;
+            document.getElementById('p-discount-amount').textContent = `- ${formatCurrency(disc)}`;
+            document.getElementById('p-total').textContent = formatCurrency(total);
+        };
+
+        window.updatePreview = () => {
+            document.getElementById('p-inv-no').textContent = '#' + (document.getElementById('inv-no').value || '---');
+            document.getElementById('p-from').textContent = document.getElementById('from-info').value || '---';
+            document.getElementById('p-to').textContent = document.getElementById('to-info').value || '---';
+            const dVal = document.getElementById('inv-date').value;
+            document.getElementById('p-date').textContent = dVal ? new Date(dVal).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}) : '-';
+            document.getElementById('p-to-label-display').textContent = document.getElementById('to-label').value || 'Diterima Oleh,';
+            document.getElementById('p-from-label-display').textContent = document.getElementById('from-label').value || 'Hormat Kami,';
+            const fN = document.getElementById('from-name').value;
+            const tN = document.getElementById('to-name').value;
+            document.getElementById('p-from-name-display').textContent = fN ? `( ${fN} )` : '( ............................ )';
+            document.getElementById('p-to-name-display').textContent = tN ? `( ${tN} )` : '( ............................ )';
+            renderItems();
+        };
+
+        document.getElementById('btn-save').addEventListener('click', window.saveDraft);
+        createNewInvoice();
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice Praktis</title>
+    <title>Invoice Praktis - DP Bertahap & Toolbar Perataan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -48,12 +48,6 @@
             line-height: 1.5;
         }
 
-        /* Prevent layout shift during typing */
-        .invoice-table {
-            border-spacing: 0;
-            width: 100%;
-        }
-
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #d2b48c; border-radius: 10px; }
         
@@ -65,6 +59,11 @@
 
         .wood-gradient {
             background: linear-gradient(135deg, #8b5a2b 0%, #a0522d 100%);
+        }
+
+        .active-row {
+            background-color: #fdfaf6;
+            border-left: 3px solid #d2b48c;
         }
     </style>
 </head>
@@ -155,9 +154,30 @@
                 </div>
             </div>
 
+            <!-- TABLE TOOLBAR (Alignment & Global Actions) -->
+            <div id="table-toolbar" class="no-print mb-4 flex items-center justify-between bg-[#fdfaf6] p-2 rounded-xl border border-[#eaddd0]">
+                <div class="flex items-center gap-4">
+                    <span class="text-[9px] font-black text-[#a1887f] uppercase tracking-widest pl-2">Perataan Baris:</span>
+                    <div class="flex bg-white rounded-lg border border-[#eaddd0] overflow-hidden shadow-sm">
+                        <button onclick="setItemAlignment('left')" id="align-btn-left" title="Rata Kiri" class="p-2 text-[#8d6e63] hover:bg-[#f7f3f0] transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="17" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="17" y1="18" x2="3" y2="18"></line></svg>
+                        </button>
+                        <button onclick="setItemAlignment('center')" id="align-btn-center" title="Rata Tengah" class="p-2 text-[#8d6e63] hover:bg-[#f7f3f0] border-x border-[#eaddd0] transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="10" x2="6" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="18" y1="18" x2="6" y2="18"></line></svg>
+                        </button>
+                        <button onclick="setItemAlignment('right')" id="align-btn-right" title="Rata Kanan" class="p-2 text-[#8d6e63] hover:bg-[#f7f3f0] transition-colors">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="text-[9px] font-bold text-[#d2b48c] italic pr-2" id="toolbar-status">
+                    Klik rincian pekerjaan untuk mengatur rata teks
+                </div>
+            </div>
+
             <!-- Table -->
             <div class="mb-8 overflow-hidden">
-                <table class="invoice-table">
+                <table class="w-full border-spacing-0" id="main-invoice-table">
                     <thead>
                         <tr class="bg-[#5d4037] text-[#f7f3f0]">
                             <th class="py-3 px-2 w-10 text-center text-[9px] uppercase font-black rounded-l-lg">No</th>
@@ -169,7 +189,7 @@
                         </tr>
                     </thead>
                     <tbody id="items-body">
-                        <!-- Rendered by JS -->
+                        <!-- JS Render -->
                     </tbody>
                 </table>
                 <button onclick="addItem()" class="no-print mt-6 flex items-center gap-1.5 text-[#a0522d] font-black text-[10px] uppercase tracking-wider hover:text-[#8b4513] transition-all px-2">
@@ -185,61 +205,46 @@
                 </div>
             </div>
 
+            <!-- TOTALS SECTION -->
             <div class="flex justify-end pt-8 border-t-4 border-[#f7f3f0]">
-                <div class="w-full md:w-[24rem] space-y-4">
+                <div class="w-full md:w-[26rem] space-y-3">
                     <div class="flex justify-between items-center text-sm font-bold text-[#d2b48c] px-4">
                         <span>Subtotal:</span>
                         <span id="p-subtotal">Rp 0</span>
                     </div>
 
-                    <div class="no-print group flex items-center justify-between bg-[#fdfaf6] p-2.5 rounded-xl border border-[#eaddd0] hover:border-[#d2b48c] transition-all mx-4">
+                    <!-- Discount Section -->
+                    <div class="no-print flex items-center justify-between bg-[#fdfaf6] p-2 rounded-xl border border-[#eaddd0] mx-4">
                         <div class="flex items-center gap-2">
                             <span class="text-[9px] font-black text-[#a1887f] uppercase">Diskon</span>
                             <div class="flex bg-white rounded-md border border-[#eaddd0] overflow-hidden text-[9px]">
-                                <button onclick="setMode('discount', 'percent')" id="mode-discount-percent" class="px-2 py-1 font-black transition-all bg-[#a0522d] text-white">%</button>
-                                <button onclick="setMode('discount', 'fixed')" id="mode-discount-fixed" class="px-2 py-1 font-black transition-all text-[#d2b48c]">Rp</button>
+                                <button onclick="setDiscountMode('percent')" id="disc-mode-pct" class="px-2 py-1 font-black bg-[#a0522d] text-white">%</button>
+                                <button onclick="setDiscountMode('fixed')" id="disc-mode-fix" class="px-2 py-1 font-black text-[#d2b48c]">Rp</button>
                             </div>
                         </div>
                         <input type="number" id="discount-input" value="0" oninput="calculateTotals()" class="bg-transparent text-right font-black text-[#a0522d] outline-none w-24 text-sm">
                     </div>
-                    
-                    <div class="print-only flex justify-between items-center text-xs font-bold text-[#c62828] px-4">
-                        <span id="p-discount-label">Diskon:</span>
-                        <span id="p-discount-amount">- Rp 0</span>
-                    </div>
 
-                    <!-- TOTAL -->
-                    <div class="flex justify-between items-center text-2xl font-black text-white wood-gradient p-5 rounded-2xl shadow-xl shadow-[#8b5a2b1a] mx-4">
+                    <div class="flex justify-between items-center text-2xl font-black text-white wood-gradient p-5 rounded-2xl shadow-xl mx-4">
                         <span class="tracking-tighter italic text-base">TOTAL</span>
                         <span id="p-total">Rp 0</span>
                     </div>
 
-                    <div class="space-y-4" id="dp-section-container">
-                        <div class="no-print flex items-center justify-end gap-2 px-4 pt-1">
-                            <span class="text-[9px] font-black text-[#d2b48c] uppercase">DP</span>
-                            <button onclick="toggleDP()" id="dp-master-toggle" class="w-8 h-4 rounded-full bg-[#eaddd0] relative transition-all">
-                                <span class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all transform translate-x-0" id="dp-toggle-knob"></span>
+                    <!-- PAYMENT STAGES (DP BERTAHAP DENGAN TANGGAL) -->
+                    <div id="stages-container" class="space-y-2 mt-4">
+                        <div class="flex items-center justify-between px-4">
+                            <h4 class="text-[10px] font-black text-[#8b5a2b] uppercase tracking-widest">Tahapan Pembayaran</h4>
+                            <button onclick="addStage()" class="no-print bg-[#f1f8e9] text-[#558b2f] p-1 rounded-md hover:bg-[#558b2f] hover:text-white transition-all">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
                         </div>
 
-                        <div id="dp-controls" class="hidden no-print flex items-center justify-between bg-[#f1f8e9] p-2.5 rounded-xl border border-[#c5e1a5] mx-4">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[9px] font-black text-[#558b2f] uppercase">DP</span>
-                                <div class="flex bg-white rounded-md border border-[#c5e1a5] overflow-hidden text-[9px]">
-                                    <button onclick="setMode('dp', 'percent')" id="mode-dp-percent" class="px-2 py-1 font-black text-[#9ccc65]">%</button>
-                                    <button onclick="setMode('dp', 'fixed')" id="mode-dp-fixed" class="px-2 py-1 font-black bg-[#689f38] text-white">Rp</button>
-                                </div>
-                            </div>
-                            <input type="number" id="dp-input" value="0" oninput="calculateTotals()" class="bg-transparent text-right font-black text-[#33691e] outline-none w-24 text-sm">
+                        <div id="stages-list">
+                            <!-- JS Rendered Stages -->
                         </div>
 
-                        <div id="dp-display-row" class="hidden flex justify-between items-center text-xs font-bold text-[#558b2f] px-4 italic">
-                            <span id="p-dp-label">DP Dibayar:</span>
-                            <span id="p-dp-amount">- Rp 0</span>
-                        </div>
-
-                        <div id="balance-display-row" class="hidden flex justify-between items-center text-base font-black text-[#5d4037] border-t-2 border-[#f7f3f0] pt-4 px-4">
-                            <span class="uppercase tracking-widest text-[11px]">Sisa</span>
+                        <div id="balance-row" class="hidden flex justify-between items-center text-lg font-black text-[#5d4037] border-t-2 border-[#f7f3f0] pt-4 px-4 mx-4">
+                            <span class="uppercase tracking-widest text-[11px]">Sisa Pelunasan</span>
                             <span id="p-balance" class="text-[#a0522d]">Rp 0</span>
                         </div>
                     </div>
@@ -259,6 +264,8 @@
                     <div contenteditable="true" id="from-name" class="font-black text-[#5d4037] tracking-tight uppercase">( Penanggung Jawab )</div>
                 </div>
             </div>
+        </div>
+    </div>
 
     <!-- Notification Toast -->
     <div id="toast" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 wood-gradient text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest opacity-0 transition-all duration-300 pointer-events-none z-[100] shadow-2xl"></div>
@@ -285,13 +292,21 @@
 
         let currentUser = null;
         let currentDraftId = null;
-        let items = [{ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false }];
-        let discountMode = 'percent'; 
-        let dpMode = 'fixed';
-        let dpEnabled = false; 
+        let activeItemId = null; // Track focused item for alignment toolbar
+        let items = [{ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false, alignment: 'left' }];
+        let paymentStages = []; // { id, label, value, mode: 'percent'|'fixed', date: 'YYYY-MM-DD' }
+        let discountMode = 'percent';
         let logoBase64 = null;
         let logoWidth = 160;
 
+        // HELPER: Auto Resize Textarea
+        window.autoResize = (el) => {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        };
+
+        // AUTH INITIALIZATION
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -299,7 +314,7 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch (err) { console.error(err); updateCloudStatus('error'); }
+            } catch (err) { updateCloudStatus('error'); }
         };
         initAuth();
 
@@ -311,212 +326,258 @@
             }
         });
 
-        const autoResize = (el) => {
-            if (!el) return;
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
-        };
-
+        // CORE FUNCTIONS
         window.addItem = () => {
-            items.push({ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false });
+            items.push({ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false, alignment: 'left' });
             renderItems();
         };
 
         window.removeItem = (id) => {
-            if (items.length <= 1) {
-                items = [{ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false }];
-            } else {
+            if (items.length > 1) {
                 items = items.filter(i => i.id !== id);
-            }
-            renderItems();
-        };
-
-        window.toggleHeader = (id) => {
-            const item = items.find(i => i.id === id);
-            if (item) {
-                item.isHeader = !item.isHeader;
+                if (activeItemId === id) activeItemId = null;
                 renderItems();
             }
         };
 
-        // SURGICAL UPDATE: Update values without full re-render
         window.updateItem = (id, field, val) => {
             const item = items.find(i => i.id === id);
             if (item) {
                 item[field] = (field === 'quantity' || field === 'price') ? (parseFloat(val) || 0) : val;
-                
-                // Only update the specific DOM elements for calculations
-                const rowTotalEl = document.getElementById(`row-total-val-${id}`);
-                if (rowTotalEl) {
-                    rowTotalEl.textContent = formatCurrency(item.quantity * item.price);
-                }
-
-                if (field === 'description') {
-                    const el = document.getElementById(`desc-${id}`);
-                    autoResize(el);
-                    
-                    // Trigger row addition if typing in the last empty row
-                    if (val.trim() !== '') {
-                        const idx = items.indexOf(item);
-                        if (idx === items.length - 1) {
-                            items.push({ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false });
-                            renderItems(); 
-                            return;
-                        }
-                    }
-                }
                 calculateTotals();
             }
         };
 
+        window.toggleHeader = (id) => {
+            const item = items.find(i => i.id === id);
+            if (item) { item.isHeader = !item.isHeader; renderItems(); }
+        };
+
+        window.setActiveItem = (id) => {
+            activeItemId = id;
+            const item = items.find(i => i.id === id);
+            
+            // Highlight active row visually
+            document.querySelectorAll('#items-body tr').forEach(row => row.classList.remove('active-row'));
+            const currentRow = document.getElementById(`row-${id}`);
+            if (currentRow) currentRow.classList.add('active-row');
+            
+            // Update Toolbar Status & Buttons
+            updateToolbarUI(item.alignment);
+            document.getElementById('toolbar-status').textContent = `Mengatur perataan baris ke-${items.indexOf(item) + 1}`;
+        };
+
+        window.setItemAlignment = (align) => {
+            if (!activeItemId) return;
+            const item = items.find(i => i.id === activeItemId);
+            if (item) {
+                item.alignment = align;
+                updateToolbarUI(align);
+                
+                // Update only the textarea alignment without full re-render to keep focus
+                const textarea = document.getElementById(`area-${activeItemId}`);
+                if (textarea) {
+                    textarea.classList.remove('text-left', 'text-center', 'text-right');
+                    textarea.classList.add(`text-${align}`);
+                }
+            }
+        };
+
+        function updateToolbarUI(align) {
+            const btns = {
+                'left': document.getElementById('align-btn-left'),
+                'center': document.getElementById('align-btn-center'),
+                'right': document.getElementById('align-btn-right')
+            };
+            
+            Object.keys(btns).forEach(key => {
+                if (key === align) {
+                    btns[key].classList.add('bg-[#8b5a2b]', 'text-white');
+                    btns[key].classList.remove('hover:bg-[#f7f3f0]', 'text-[#8d6e63]');
+                } else {
+                    btns[key].classList.remove('bg-[#8b5a2b]', 'text-white');
+                    btns[key].classList.add('hover:bg-[#f7f3f0]', 'text-[#8d6e63]');
+                }
+            });
+        }
+
+        // DP BERTAP (STAGES) FUNCTIONS
+        window.addStage = () => {
+            const today = new Date().toISOString().split('T')[0];
+            paymentStages.push({ 
+                id: Date.now(), 
+                label: `DP Tahap ${paymentStages.length + 1}`, 
+                value: 0, 
+                mode: 'fixed',
+                date: today
+            });
+            renderStages();
+        };
+
+        window.removeStage = (id) => {
+            paymentStages = paymentStages.filter(s => s.id !== id);
+            renderStages();
+        };
+
+        window.updateStage = (id, field, val) => {
+            const stage = paymentStages.find(s => s.id === id);
+            if (stage) {
+                stage[field] = field === 'value' ? (parseFloat(val) || 0) : val;
+                if (field === 'date') renderStages(); 
+                calculateTotals();
+            }
+        };
+
+        window.setStageMode = (id, mode) => {
+            const stage = paymentStages.find(s => s.id === id);
+            if (stage) {
+                stage.mode = mode;
+                renderStages();
+            }
+        };
+
+        window.setDiscountMode = (mode) => {
+            discountMode = mode;
+            const pctBtn = document.getElementById('disc-mode-pct');
+            const fixBtn = document.getElementById('disc-mode-fix');
+            pctBtn.className = mode === 'percent' ? 'px-2 py-1 font-black bg-[#a0522d] text-white' : 'px-2 py-1 font-black text-[#d2b48c]';
+            fixBtn.className = mode === 'fixed' ? 'px-2 py-1 font-black bg-[#a0522d] text-white' : 'px-2 py-1 font-black text-[#d2b48c]';
+            calculateTotals();
+        };
+
+        // RENDERING
         window.renderItems = () => {
             const tbody = document.getElementById('items-body');
-            const activeId = document.activeElement ? document.activeElement.id : null;
-            const start = document.activeElement ? document.activeElement.selectionStart : null;
-            const end = document.activeElement ? document.activeElement.selectionEnd : null;
-            
             tbody.innerHTML = '';
-            let headerCounter = 0;
-
+            let counter = 0;
             items.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = `border-b border-[#f7f3f0] group hover:bg-[#fdfaf6] transition-all relative ${item.isHeader ? 'bg-[#fdfaf6] font-bold' : ''}`;
+                tr.id = `row-${item.id}`;
+                tr.className = `border-b border-[#f7f3f0] group hover:bg-[#fdfaf6] transition-all ${item.isHeader ? 'bg-[#fdfaf6] font-bold' : ''} ${activeItemId === item.id ? 'active-row' : ''}`;
                 
-                let displayNo = '';
-                if (item.isHeader) {
-                    headerCounter++;
-                    displayNo = headerCounter;
-                }
-
+                const displayNo = item.isHeader ? (++counter) : '';
+                const alignClass = `text-${item.alignment || 'left'}`;
+                
                 tr.innerHTML = `
-                    <td class="py-4 px-2 text-center text-xs text-[#a1887f] font-bold align-top">
-                        ${displayNo}
-                    </td>
+                    <td class="py-4 px-2 text-center text-xs text-[#a1887f] font-bold align-top">${displayNo}</td>
                     <td class="py-4 px-4 relative align-top">
                         <div class="no-print absolute -left-12 top-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <button onclick="removeItem(${item.id})" class="bg-red-50 text-red-500 p-1 rounded hover:bg-red-500 hover:text-white">
+                            <button onclick="removeItem(${item.id})" title="Hapus" class="bg-red-50 text-red-500 p-1 rounded hover:bg-red-500 hover:text-white">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
-                            <button onclick="toggleHeader(${item.id})" class="p-1 rounded ${item.isHeader ? 'bg-[#a0522d] text-white' : 'bg-[#eaddd0] text-[#8d6e63] hover:bg-[#d2b48c]'}">
+                            <button onclick="toggleHeader(${item.id})" title="Header" class="p-1 rounded ${item.isHeader ? 'bg-[#a0522d] text-white' : 'bg-[#eaddd0] text-[#8d6e63] hover:bg-[#d2b48c]'}">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
                             </button>
                         </div>
-                        <textarea id="desc-${item.id}" 
-                            placeholder="${item.isHeader ? 'Nama Area...' : 'Rincian...'}" 
-                            oninput="updateItem(${item.id}, 'description', this.value)" 
-                            class="item-textarea ${item.isHeader ? 'font-extrabold text-[#8b5a2b]' : 'font-semibold text-[#5d4037]'}">${item.description}</textarea>
+                        <textarea id="area-${item.id}" 
+                            onfocus="setActiveItem(${item.id})"
+                            oninput="updateItem(${item.id}, 'description', this.value); autoResize(this)" 
+                            placeholder="${item.isHeader ? 'Nama Area/Grup...' : 'Rincian item...'}" 
+                            class="item-textarea ${alignClass} ${item.isHeader ? 'font-extrabold text-[#8b5a2b]' : 'font-semibold text-[#5d4037]'}">${item.description}</textarea>
                     </td>
-                    <td class="py-4 px-2 align-top text-center">
-                        <input type="number" id="qty-${item.id}" value="${item.quantity}" oninput="updateItem(${item.id}, 'quantity', this.value)" class="w-full text-center bg-transparent font-bold text-[#5d4037] outline-none ${item.isHeader ? 'invisible' : ''}">
-                    </td>
-                    <td class="py-4 px-2 align-top text-center">
-                        <input type="text" id="unit-${item.id}" value="${item.unit}" placeholder="..." oninput="updateItem(${item.id}, 'unit', this.value)" class="w-full text-center bg-transparent font-bold text-[#a1887f] outline-none text-[11px] ${item.isHeader ? 'invisible' : ''}">
-                    </td>
-                    <td class="py-4 px-2 align-top text-right">
-                        <input type="number" id="price-${item.id}" value="${item.price}" oninput="updateItem(${item.id}, 'price', this.value)" class="w-full text-right bg-transparent font-bold text-[#5d4037] outline-none ${item.isHeader ? 'invisible' : ''}">
-                    </td>
-                    <td class="py-4 px-4 text-right font-black text-[#5d4037] text-sm align-top">
-                        <span id="row-total-val-${item.id}" class="${item.isHeader ? 'invisible' : ''}">${formatCurrency(item.quantity * item.price)}</span>
-                    </td>
+                    <td class="py-4 px-2 align-top"><input type="number" value="${item.quantity}" oninput="updateItem(${item.id}, 'quantity', this.value)" class="w-full text-center bg-transparent font-bold text-[#5d4037] outline-none ${item.isHeader ? 'invisible' : ''}"></td>
+                    <td class="py-4 px-2 align-top"><input type="text" value="${item.unit}" placeholder="..." oninput="updateItem(${item.id}, 'unit', this.value)" class="w-full text-center bg-transparent font-bold text-[#a1887f] outline-none text-[11px] ${item.isHeader ? 'invisible' : ''}"></td>
+                    <td class="py-4 px-2 align-top"><input type="number" value="${item.price}" oninput="updateItem(${item.id}, 'price', this.value)" class="w-full text-right bg-transparent font-bold text-[#5d4037] outline-none ${item.isHeader ? 'invisible' : ''}"></td>
+                    <td class="py-4 px-4 text-right font-black text-[#5d4037] text-sm align-top ${item.isHeader ? 'invisible' : ''}">${formatCurrency(item.quantity * item.price)}</td>
                 `;
                 tbody.appendChild(tr);
-                
-                const txt = document.getElementById(`desc-${item.id}`);
-                autoResize(txt);
+                autoResize(document.getElementById(`area-${item.id}`));
             });
-
-            if (activeId) {
-                const el = document.getElementById(activeId);
-                if (el) {
-                    el.focus();
-                    if (start !== null && end !== null && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) {
-                        el.setSelectionRange(start, end);
-                    }
-                }
-            }
             calculateTotals();
         };
 
-        window.toggleDP = () => {
-            dpEnabled = !dpEnabled;
-            const toggle = document.getElementById('dp-master-toggle');
-            const knob = document.getElementById('dp-toggle-knob');
-            const controls = document.getElementById('dp-controls');
-            const displayRow = document.getElementById('dp-display-row');
-            const balanceRow = document.getElementById('balance-display-row');
-
-            if (dpEnabled) {
-                toggle.classList.replace('bg-[#eaddd0]', 'bg-[#689f38]');
-                knob.classList.replace('translate-x-0', 'translate-x-4');
-                controls.classList.remove('hidden');
-                displayRow.classList.remove('hidden');
-                balanceRow.classList.remove('hidden');
-            } else {
-                toggle.classList.replace('bg-[#689f38]', 'bg-[#eaddd0]');
-                knob.classList.replace('translate-x-4', 'translate-x-0');
-                controls.classList.add('hidden');
-                displayRow.classList.add('hidden');
-                balanceRow.classList.add('hidden');
-            }
-            calculateTotals();
-        };
-
-        window.setMode = (type, mode) => {
-            if (type === 'discount') {
-                discountMode = mode;
-                document.getElementById('mode-discount-percent').className = `px-2 py-1 font-black transition-all ${mode === 'percent' ? 'bg-[#a0522d] text-white' : 'text-[#d2b48c] bg-white'}`;
-                document.getElementById('mode-discount-fixed').className = `px-2 py-1 font-black transition-all ${mode === 'fixed' ? 'bg-[#a0522d] text-white' : 'text-[#d2b48c] bg-white'}`;
-            } else if (type === 'dp') {
-                dpMode = mode;
-                document.getElementById('mode-dp-percent').className = `px-2 py-1 font-black transition-all ${mode === 'percent' ? 'bg-[#689f38] text-white' : 'text-[#9ccc65] bg-white'}`;
-                document.getElementById('mode-dp-fixed').className = `px-2 py-1 font-black transition-all ${mode === 'fixed' ? 'bg-[#689f38] text-white' : 'text-[#9ccc65] bg-white'}`;
-            }
+        window.renderStages = () => {
+            const list = document.getElementById('stages-list');
+            list.innerHTML = '';
+            
+            paymentStages.forEach(s => {
+                const div = document.createElement('div');
+                div.className = "group flex flex-col gap-1 mx-4 mb-3 border-b border-[#f7f3f0] pb-2 last:border-none";
+                div.innerHTML = `
+                    <div class="flex justify-between items-start text-[11px] font-bold text-[#558b2f] italic">
+                        <div class="flex flex-col">
+                            <span contenteditable="true" onblur="updateStage(${s.id}, 'label', this.textContent)" class="outline-none border-b border-transparent hover:border-[#c5e1a5]">${s.label}</span>
+                            <span class="text-[9px] text-[#8d6e63] font-medium not-italic">Tgl: ${formatDateId(s.date)}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <button onclick="removeStage(${s.id})" class="no-print opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                             </button>
+                             <span class="text-right">- ${formatStageValue(s)}</span>
+                        </div>
+                    </div>
+                    <div class="no-print flex items-center justify-between bg-[#f1f8e9] p-2 rounded-xl border border-[#c5e1a5] mt-1 gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="flex bg-white rounded-md border border-[#c5e1a5] overflow-hidden text-[9px]">
+                                <button onclick="setStageMode(${s.id}, 'percent')" class="px-2 py-1 font-black ${s.mode === 'percent' ? 'bg-[#689f38] text-white' : 'text-[#9ccc65]'}">%</button>
+                                <button onclick="setStageMode(${s.id}, 'fixed')" class="px-2 py-1 font-black ${s.mode === 'fixed' ? 'bg-[#689f38] text-white' : 'text-[#9ccc65]'}">Rp</button>
+                            </div>
+                            <input type="date" value="${s.date}" oninput="updateStage(${s.id}, 'date', this.value)" class="text-[10px] bg-white border border-[#c5e1a5] rounded px-1 text-[#33691e] font-bold outline-none">
+                        </div>
+                        <input type="number" value="${s.value}" oninput="updateStage(${s.id}, 'value', this.value)" class="bg-transparent text-right font-black text-[#33691e] outline-none w-20 text-sm">
+                    </div>
+                `;
+                list.appendChild(div);
+            });
             calculateTotals();
         };
 
         window.calculateTotals = () => {
-            const subtotal = items.reduce((s, i) => s + (i.isHeader ? 0 : (i.quantity * i.price)), 0);
+            const subtotal = items.reduce((sum, i) => sum + (i.isHeader ? 0 : (i.quantity * i.price)), 0);
             const discVal = parseFloat(document.getElementById('discount-input').value) || 0;
-            let discAmount = discountMode === 'percent' ? (subtotal * discVal) / 100 : discVal;
-            const invoiceTotal = Math.max(0, subtotal - discAmount);
+            const discAmount = discountMode === 'percent' ? (subtotal * discVal / 100) : discVal;
+            const total = Math.max(0, subtotal - discAmount);
 
-            let dpAmount = 0;
-            let remainingBalance = invoiceTotal;
-            if (dpEnabled) {
-                const dpVal = parseFloat(document.getElementById('dp-input').value) || 0;
-                dpAmount = dpMode === 'percent' ? (invoiceTotal * dpVal) / 100 : dpVal;
-                remainingBalance = Math.max(0, invoiceTotal - dpAmount);
-            }
+            let totalPaidStages = 0;
+            paymentStages.forEach(s => {
+                const amt = s.mode === 'percent' ? (total * s.value / 100) : s.value;
+                totalPaidStages += amt;
+            });
+
+            const balance = Math.max(0, total - totalPaidStages);
 
             document.getElementById('p-subtotal').textContent = formatCurrency(subtotal);
-            document.getElementById('p-discount-label').textContent = discountMode === 'percent' ? `Diskon (${discVal}%):` : 'Diskon:';
-            document.getElementById('p-discount-amount').textContent = `- ${formatCurrency(discAmount)}`;
-            document.getElementById('p-total').textContent = formatCurrency(invoiceTotal);
+            document.getElementById('p-total').textContent = formatCurrency(total);
+            document.getElementById('p-balance').textContent = formatCurrency(balance);
             
-            if (dpEnabled) {
-                const dpInputVal = parseFloat(document.getElementById('dp-input').value) || 0;
-                document.getElementById('p-dp-label').textContent = dpMode === 'percent' ? `DP (${dpInputVal}%):` : 'DP:';
-                document.getElementById('p-dp-amount').textContent = `- ${formatCurrency(dpAmount)}`;
-                document.getElementById('p-balance').textContent = formatCurrency(remainingBalance);
-            }
+            const balanceRow = document.getElementById('balance-row');
+            if (paymentStages.length > 0) balanceRow.classList.remove('hidden');
+            else balanceRow.classList.add('hidden');
         };
 
+        function formatStageValue(s) {
+            const subtotal = items.reduce((sum, i) => sum + (i.isHeader ? 0 : (i.quantity * i.price)), 0);
+            const discVal = parseFloat(document.getElementById('discount-input').value) || 0;
+            const discAmount = discountMode === 'percent' ? (subtotal * discVal / 100) : discVal;
+            const total = subtotal - discAmount;
+            
+            const amt = s.mode === 'percent' ? (total * s.value / 100) : s.value;
+            return formatCurrency(amt);
+        }
+
+        // HELPERS
+        function formatDateId(dateStr) {
+            if (!dateStr) return "-";
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return new Date(dateStr).toLocaleDateString('id-ID', options);
+        }
+
+        function formatCurrency(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n); }
+        
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            t.textContent = m; t.classList.add('opacity-100', 'translate-y-[-10px]');
+            setTimeout(() => t.classList.remove('opacity-100', 'translate-y-[-10px]'), 3000);
+        }
+
+        // LOGO HANDLING
         document.getElementById('logo-upload').onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    logoBase64 = event.target.result;
-                    displayLogo(logoBase64);
-                };
+                reader.onload = (event) => { logoBase64 = event.target.result; displayLogo(logoBase64); };
                 reader.readAsDataURL(file);
             }
-        };
-
-        window.resizeLogo = (val) => {
-            logoWidth = val;
-            const img = document.getElementById('logo-img');
-            if (img) img.style.width = `${val}px`;
         };
 
         function displayLogo(src, width) {
@@ -524,98 +585,72 @@
             const placeholder = document.getElementById('logo-placeholder');
             const removeBtn = document.getElementById('remove-logo');
             const control = document.getElementById('logo-size-control');
-            const slider = document.getElementById('logo-size-slider');
-            const actualWidth = width || logoWidth;
-            logoWidth = actualWidth;
-            slider.value = actualWidth;
-            img.src = src;
-            img.style.width = `${actualWidth}px`;
-            img.classList.remove('hidden');
-            placeholder.classList.add('hidden');
-            removeBtn.classList.remove('hidden');
-            control.classList.remove('hidden');
+            logoWidth = width || 160;
+            img.src = src; img.style.width = `${logoWidth}px`;
+            img.classList.remove('hidden'); placeholder.classList.add('hidden');
+            removeBtn.classList.remove('hidden'); control.classList.remove('hidden');
         }
 
         window.removeLogo = () => {
             logoBase64 = null;
-            const img = document.getElementById('logo-img');
-            const placeholder = document.getElementById('logo-placeholder');
-            const removeBtn = document.getElementById('remove-logo');
-            const control = document.getElementById('logo-size-control');
-            img.classList.add('hidden');
-            img.src = "";
-            placeholder.classList.remove('hidden');
-            removeBtn.classList.add('hidden');
-            control.classList.add('hidden');
-            document.getElementById('logo-upload').value = '';
+            document.getElementById('logo-img').classList.add('hidden');
+            document.getElementById('logo-placeholder').classList.remove('hidden');
+            document.getElementById('remove-logo').classList.add('hidden');
+            document.getElementById('logo-size-control').classList.add('hidden');
         };
 
+        window.resizeLogo = (val) => { logoWidth = val; document.getElementById('logo-img').style.width = `${val}px`; };
+
+        // FIREBASE DRAFT SYSTEM
         window.createNewInvoice = () => {
             currentDraftId = null;
-            document.getElementById('inv-no').textContent = 'INV/' + new Date().getFullYear() + '/' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
-            document.getElementById('inv-date').textContent = new Intl.DateTimeFormat('id-ID', {day:'numeric', month:'short', year:'numeric'}).format(new Date());
-            document.getElementById('from-info').textContent = 'Nama Perusahaan Anda\nAlamat';
-            document.getElementById('to-info').textContent = 'Nama Customer\nAlamat';
-            document.getElementById('discount-input').value = 0;
-            document.getElementById('dp-input').value = 0;
-            if (dpEnabled) toggleDP(); 
-            removeLogo();
-            items = [{ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false }];
+            activeItemId = null;
+            items = [{ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false, alignment: 'left' }];
+            paymentStages = [];
+            document.getElementById('inv-no').textContent = `INV/${new Date().getFullYear()}/${Math.floor(Math.random()*999).toString().padStart(3,'0')}`;
             renderItems();
-            showToast("Baru");
+            renderStages();
+            showToast("Invoice Baru");
         };
 
         window.saveDraft = async () => {
-            if (!currentUser) return showToast("Offline");
+            if (!currentUser) return showToast("Gagal (Offline)");
             const id = currentDraftId || crypto.randomUUID();
             const data = {
                 invTitle: document.getElementById('inv-title').textContent,
                 invNo: document.getElementById('inv-no').textContent,
                 invDate: document.getElementById('inv-date').textContent,
                 fromInfo: document.getElementById('from-info').textContent,
-                fromLabel: document.getElementById('from-label').textContent,
-                fromName: document.getElementById('from-name').textContent,
                 toInfo: document.getElementById('to-info').textContent,
-                toLabel: document.getElementById('to-label').textContent,
-                toName: document.getElementById('to-name').textContent,
                 notes: document.getElementById('invoice-notes').textContent,
-                items: items,
+                fromName: document.getElementById('from-name').textContent,
+                toName: document.getElementById('to-name').textContent,
+                items,
+                paymentStages,
                 discountValue: parseFloat(document.getElementById('discount-input').value) || 0,
-                discountMode: discountMode,
-                dpEnabled: dpEnabled,
-                dpValue: parseFloat(document.getElementById('dp-input').value) || 0,
-                dpMode: dpMode,
+                discountMode,
                 logo: logoBase64,
-                logoWidth: logoWidth,
+                logoWidth,
                 updatedAt: serverTimestamp()
             };
             try {
-                const path = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id);
-                await setDoc(path, data);
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id), data);
                 currentDraftId = id;
                 showToast("Tersimpan");
-            } catch (e) { showToast("Gagal"); }
+            } catch (e) { showToast("Gagal Simpan"); }
         };
 
         function listenToDrafts() {
-            const col = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices');
-            onSnapshot(col, (snap) => {
+            onSnapshot(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices'), (snap) => {
                 const list = document.getElementById('draft-list');
                 list.innerHTML = '';
-                if (snap.empty) {
-                    list.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-4 italic">Belum ada draf</p>';
-                    return;
-                }
+                if (snap.empty) { list.innerHTML = '<p class="text-[10px] text-slate-400 text-center py-4">Kosong</p>'; return; }
                 snap.docs.forEach(docSnap => {
                     const d = docSnap.data();
                     const div = document.createElement('div');
-                    div.className = `p-3 rounded-xl border text-[11px] cursor-pointer transition-all ${currentDraftId === docSnap.id ? 'wood-gradient text-white border-transparent' : 'bg-white hover:bg-[#fdfaf6] border-[#eaddd0] text-[#8d6e63]'}`;
-                    div.innerHTML = `
-                        <div class="flex justify-between items-center" onclick="loadDraft('${docSnap.id}')">
-                            <span class="font-black truncate mr-2">${d.invNo}</span>
-                            <button onclick="event.stopPropagation(); deleteDraft('${docSnap.id}')" class="opacity-50 hover:opacity-100"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path></svg></button>
-                        </div>
-                    `;
+                    div.className = `p-3 rounded-xl border text-[11px] cursor-pointer transition-all ${currentDraftId === docSnap.id ? 'wood-gradient text-white border-transparent' : 'bg-white border-[#eaddd0] text-[#8d6e63]'}`;
+                    div.onclick = () => loadDraft(docSnap.id);
+                    div.innerHTML = `<div class="flex justify-between font-black"><span>${d.invNo}</span><button onclick="event.stopPropagation(); deleteDraft('${docSnap.id}')" class="opacity-50 hover:opacity-100">✕</button></div>`;
                     list.appendChild(div);
                 });
             });
@@ -630,40 +665,30 @@
                 document.getElementById('inv-no').textContent = d.invNo;
                 document.getElementById('inv-date').textContent = d.invDate;
                 document.getElementById('from-info').textContent = d.fromInfo;
-                document.getElementById('from-label').textContent = d.fromLabel;
-                document.getElementById('from-name').textContent = d.fromName;
                 document.getElementById('to-info').textContent = d.toInfo;
-                document.getElementById('to-label').textContent = d.toLabel;
+                document.getElementById('invoice-notes').textContent = d.notes;
+                document.getElementById('from-name').textContent = d.fromName;
                 document.getElementById('to-name').textContent = d.toName;
-                document.getElementById('invoice-notes').textContent = d.notes || "";
                 document.getElementById('discount-input').value = d.discountValue || 0;
-                document.getElementById('dp-input').value = d.dpValue || 0;
-                if (d.dpEnabled !== dpEnabled) toggleDP(); 
-                items = d.items;
                 discountMode = d.discountMode || 'percent';
-                dpMode = d.dpMode || 'fixed';
+                items = d.items;
+                paymentStages = d.paymentStages || [];
                 logoBase64 = d.logo;
                 logoWidth = d.logoWidth || 160;
                 if (logoBase64) displayLogo(logoBase64, logoWidth); else removeLogo();
-                setMode('discount', discountMode);
-                setMode('dp', dpMode);
+                setDiscountMode(discountMode);
                 renderItems();
-                showToast("Dimuat");
+                renderStages();
             }, {onlyOnce: true});
         };
 
         window.deleteDraft = async (id) => {
-            if (!confirm("Hapus?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id));
-            if (currentDraftId === id) createNewInvoice();
+            if (confirm("Hapus draf ini?")) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id));
+                if (currentDraftId === id) createNewInvoice();
+            }
         };
 
-        function formatCurrency(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n); }
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            t.textContent = m; t.classList.add('opacity-100', 'translate-y-[-10px]');
-            setTimeout(() => t.classList.remove('opacity-100', 'translate-y-[-10px]'), 3000);
-        }
         function updateCloudStatus(s) {
             const el = document.getElementById('cloud-status');
             const dot = el.querySelector('span');
@@ -671,10 +696,6 @@
                 el.className = "flex items-center gap-1.5 text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-[#f1f8e9] text-[#558b2f] border border-[#c5e1a5]";
                 dot.className = "w-2 h-2 rounded-full bg-[#8bc34a] animate-pulse";
                 el.lastChild.textContent = "Online";
-            } else {
-                el.className = "flex items-center gap-1.5 text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-red-50 text-red-400 border border-red-100";
-                dot.className = "w-2 h-2 rounded-full bg-red-500";
-                el.lastChild.textContent = "Offline";
             }
         }
 

@@ -10,7 +10,7 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f3f0; /* Pastel Cream */
+            background-color: #f7f3f0;
         }
 
         @media print {
@@ -30,16 +30,16 @@
             min-height: 297mm;
             width: 210mm;
             margin: 2rem auto;
-            padding: 4rem;
-            box-shadow: 0 20px 25px -5px rgba(139, 94, 60, 0.1), 0 10px 10px -5px rgba(139, 94, 60, 0.04);
+            padding: 3.5rem;
+            box-shadow: 0 20px 25px -5px rgba(139, 94, 60, 0.1);
             position: relative;
-            border-top: 8px solid #8b5a2b; /* Wood Accent */
+            border-top: 8px solid #8b5a2b;
         }
 
         [contenteditable]:focus {
-            outline: 2px dashed #a0522d;
-            outline-offset: 4px;
+            outline: none;
             background-color: #fdfaf6;
+            border-bottom: 2px dashed #d2b48c;
         }
 
         .item-textarea {
@@ -48,11 +48,12 @@
             line-height: 1.5;
         }
 
-        .item-input {
-            @apply w-full bg-transparent border-b border-transparent focus:border-[#a0522d] outline-none transition-all py-1 block;
+        /* Prevent layout shift during typing */
+        .invoice-table {
+            border-spacing: 0;
+            width: 100%;
         }
 
-        /* Custom Scrollbar Wood Theme */
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #d2b48c; border-radius: 10px; }
         
@@ -62,20 +63,15 @@
             margin: 0; 
         }
 
-        /* Wood Texture Accent for UI */
         .wood-gradient {
             background: linear-gradient(135deg, #8b5a2b 0%, #a0522d 100%);
-        }
-        
-        .pastel-wood-bg {
-            background-color: #eaddd0;
         }
     </style>
 </head>
 <body class="p-4">
 
     <!-- Top Navigation Bar -->
-    <div class="no-print sticky top-0 z-50 max-w-5xl mx-auto mb-6 flex flex-col md:flex-row items-center justify-between bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-md border border-[#eaddd0] gap-4">
+    <div class="no-print sticky top-0 z-50 max-w-5xl mx-auto mb-6 flex flex-col md:flex-row items-center justify-between bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-md border border-[#eaddd0] gap-4">
         <div class="flex items-center gap-4">
             <h1 class="text-xl font-extrabold text-[#5d4037] tracking-tight italic">Invoice<span class="text-[#a0522d]">Praktis</span></h1>
             <div id="cloud-status" class="flex items-center gap-1.5 text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-[#fdfaf6] text-[#8d6e63] border border-[#eaddd0]">
@@ -116,10 +112,10 @@
                 <div class="flex flex-col gap-2">
                     <div class="relative group">
                         <input type="file" id="logo-upload" class="hidden" accept="image/*">
-                        <div id="logo-container" onclick="document.getElementById('logo-upload').click()" class="min-w-[10rem] min-h-[5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-[#fdfaf6] transition-all overflow-hidden relative">
-                            <div id="logo-placeholder" class="text-center p-4">
+                        <div id="logo-container" onclick="document.getElementById('logo-upload').click()" class="min-w-[10rem] min-h-[5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-[#fdfaf6] transition-all overflow-hidden relative border-none">
+                            <div id="logo-placeholder" class="hidden text-center p-4">
                                 <svg class="mx-auto text-[#d2b48c]" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                <p class="text-[9px] font-bold text-[#a1887f] mt-2 uppercase tracking-tighter">Upload Logo</p>
+                                <p class="text-[9px] font-bold text-[#a1887f] mt-2 uppercase tracking-tighter text-center">Upload Logo</p>
                             </div>
                             <img id="logo-img" class="h-auto object-contain w-[160px] hidden" src="">
                             <button onclick="event.stopPropagation(); removeLogo()" id="remove-logo" class="no-print absolute -top-1 -right-1 bg-red-400 text-white rounded-full p-1 shadow-md hover:bg-red-500 transition-colors hidden">
@@ -128,7 +124,7 @@
                         </div>
                     </div>
                     <div id="logo-size-control" class="no-print flex flex-col gap-1 px-1 hidden">
-                        <label class="text-[8px] font-black text-[#d2b48c] uppercase">Ukuran Logo</label>
+                        <label class="text-[8px] font-black text-[#d2b48c] uppercase tracking-widest">Resize</label>
                         <input type="range" id="logo-size-slider" min="50" max="350" value="160" oninput="resizeLogo(this.value)" class="w-full h-1 bg-[#eaddd0] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]">
                     </div>
                 </div>
@@ -142,14 +138,12 @@
                 </div>
             </div>
 
-            <!-- Addresses -->
             <div class="grid grid-cols-2 gap-12 mb-12">
                 <div>
                     <h3 class="text-[10px] uppercase font-black text-[#d2b48c] mb-3 border-b-2 border-[#fdfaf6] tracking-[0.2em]">Pengirim</h3>
                     <div contenteditable="true" id="from-info" class="text-sm font-semibold text-[#5d4037] leading-relaxed whitespace-pre-line">
                         Nama Perusahaan Anda
                         Jl. Contoh No. 123, Kota
-                        Telp: 0812-XXXX-XXXX
                     </div>
                 </div>
                 <div class="text-right">
@@ -157,52 +151,48 @@
                     <div contenteditable="true" id="to-info" class="text-sm font-semibold text-[#5d4037] leading-relaxed whitespace-pre-line">
                         Nama Customer / Instansi
                         Alamat Lengkap Customer
-                        Kontak Penerima
                     </div>
                 </div>
             </div>
 
             <!-- Table -->
-            <div class="mb-8">
-                <table class="w-full text-left table-fixed">
+            <div class="mb-8 overflow-hidden">
+                <table class="invoice-table">
                     <thead>
                         <tr class="bg-[#5d4037] text-[#f7f3f0]">
-                            <th class="py-3 px-3 text-[9px] uppercase font-black tracking-widest rounded-l-lg w-12 text-center">No</th>
-                            <th class="py-3 px-4 text-[9px] uppercase font-black tracking-widest w-auto text-left">Item Pekerjaan</th>
-                            <th class="py-3 px-2 text-[9px] uppercase font-black tracking-widest text-center w-16">Qty</th>
-                            <th class="py-3 px-2 text-[9px] uppercase font-black tracking-widest text-center w-20">Satuan</th>
-                            <th class="py-3 px-2 text-[9px] uppercase font-black tracking-widest text-right w-36">Harga Satuan</th>
-                            <th class="py-3 px-4 text-[9px] uppercase font-black tracking-widest text-right w-36 rounded-r-lg">Total</th>
+                            <th class="py-3 px-2 w-10 text-center text-[9px] uppercase font-black rounded-l-lg">No</th>
+                            <th class="py-3 px-4 text-[9px] uppercase font-black text-left">Item Pekerjaan</th>
+                            <th class="py-3 px-2 w-16 text-center text-[9px] uppercase font-black">Qty</th>
+                            <th class="py-3 px-2 w-20 text-center text-[9px] uppercase font-black">Satuan</th>
+                            <th class="py-3 px-2 w-32 text-right text-[9px] uppercase font-black">Harga (Sat)</th>
+                            <th class="py-3 px-4 w-36 text-right text-[9px] uppercase font-black rounded-r-lg">Total</th>
                         </tr>
                     </thead>
                     <tbody id="items-body">
                         <!-- Rendered by JS -->
                     </tbody>
                 </table>
-                <button onclick="addItem()" class="no-print mt-4 flex items-center gap-1.5 text-[#a0522d] font-black text-[10px] uppercase tracking-wider hover:text-[#8b4513] transition-all">
+                <button onclick="addItem()" class="no-print mt-6 flex items-center gap-1.5 text-[#a0522d] font-black text-[10px] uppercase tracking-wider hover:text-[#8b4513] transition-all px-2">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Tambah Baris Baru
                 </button>
             </div>
 
-            <!-- Notes Section -->
             <div class="mb-12">
-                <h3 class="text-[10px] uppercase font-black text-[#d2b48c] mb-2 border-b-2 border-[#fdfaf6] tracking-[0.2em]">Catatan Tambahan</h3>
+                <h3 class="text-[10px] uppercase font-black text-[#d2b48c] mb-2 border-b-2 border-[#fdfaf6] tracking-[0.2em]">Catatan</h3>
                 <div contenteditable="true" id="invoice-notes" class="text-[11px] font-medium text-[#8d6e63] leading-relaxed min-h-[4rem] whitespace-pre-line">
-                    * Pembayaran dapat dikirim melalui Rekening Bank XXXX: 1234-5678-90 (A/N Nama Anda)
+                    * Pembayaran melalui Bank XXXX: 1234-5678-90 (A/N Nama Anda)
                 </div>
             </div>
 
-            <!-- Totals Section -->
             <div class="flex justify-end pt-8 border-t-4 border-[#f7f3f0]">
-                <div class="w-full md:w-[26rem] space-y-3">
+                <div class="w-full md:w-[24rem] space-y-4">
                     <div class="flex justify-between items-center text-sm font-bold text-[#d2b48c] px-4">
                         <span>Subtotal:</span>
                         <span id="p-subtotal">Rp 0</span>
                     </div>
 
-                    <!-- Discount UI -->
-                    <div class="no-print group flex items-center justify-between bg-[#fdfaf6] p-2.5 rounded-xl border border-[#eaddd0] hover:border-[#d2b48c] transition-all">
+                    <div class="no-print group flex items-center justify-between bg-[#fdfaf6] p-2.5 rounded-xl border border-[#eaddd0] hover:border-[#d2b48c] transition-all mx-4">
                         <div class="flex items-center gap-2">
                             <span class="text-[9px] font-black text-[#a1887f] uppercase">Diskon</span>
                             <div class="flex bg-white rounded-md border border-[#eaddd0] overflow-hidden text-[9px]">
@@ -219,23 +209,22 @@
                     </div>
 
                     <!-- TOTAL -->
-                    <div class="flex justify-between items-center text-2xl font-black text-white wood-gradient p-5 rounded-2xl shadow-xl shadow-[#8b5a2b1a]">
-                        <span class="tracking-tighter italic text-base">TOTAL TAGIHAN</span>
+                    <div class="flex justify-between items-center text-2xl font-black text-white wood-gradient p-5 rounded-2xl shadow-xl shadow-[#8b5a2b1a] mx-4">
+                        <span class="tracking-tighter italic text-base">TOTAL</span>
                         <span id="p-total">Rp 0</span>
                     </div>
 
-                    <!-- DP Section -->
-                    <div class="space-y-3" id="dp-section-container">
+                    <div class="space-y-4" id="dp-section-container">
                         <div class="no-print flex items-center justify-end gap-2 px-4 pt-1">
-                            <span class="text-[9px] font-black text-[#d2b48c] uppercase">Aktifkan DP</span>
+                            <span class="text-[9px] font-black text-[#d2b48c] uppercase">DP</span>
                             <button onclick="toggleDP()" id="dp-master-toggle" class="w-8 h-4 rounded-full bg-[#eaddd0] relative transition-all">
                                 <span class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all transform translate-x-0" id="dp-toggle-knob"></span>
                             </button>
                         </div>
 
-                        <div id="dp-controls" class="hidden no-print flex items-center justify-between bg-[#f1f8e9] p-2.5 rounded-xl border border-[#c5e1a5]">
+                        <div id="dp-controls" class="hidden no-print flex items-center justify-between bg-[#f1f8e9] p-2.5 rounded-xl border border-[#c5e1a5] mx-4">
                             <div class="flex items-center gap-2">
-                                <span class="text-[9px] font-black text-[#558b2f] uppercase">Uang Muka (DP)</span>
+                                <span class="text-[9px] font-black text-[#558b2f] uppercase">DP</span>
                                 <div class="flex bg-white rounded-md border border-[#c5e1a5] overflow-hidden text-[9px]">
                                     <button onclick="setMode('dp', 'percent')" id="mode-dp-percent" class="px-2 py-1 font-black text-[#9ccc65]">%</button>
                                     <button onclick="setMode('dp', 'fixed')" id="mode-dp-fixed" class="px-2 py-1 font-black bg-[#689f38] text-white">Rp</button>
@@ -245,12 +234,12 @@
                         </div>
 
                         <div id="dp-display-row" class="hidden flex justify-between items-center text-xs font-bold text-[#558b2f] px-4 italic">
-                            <span id="p-dp-label">Sudah Dibayar (DP):</span>
+                            <span id="p-dp-label">DP Dibayar:</span>
                             <span id="p-dp-amount">- Rp 0</span>
                         </div>
 
                         <div id="balance-display-row" class="hidden flex justify-between items-center text-base font-black text-[#5d4037] border-t-2 border-[#f7f3f0] pt-4 px-4">
-                            <span class="uppercase tracking-widest text-[11px]">Sisa Pembayaran</span>
+                            <span class="uppercase tracking-widest text-[11px]">Sisa</span>
                             <span id="p-balance" class="text-[#a0522d]">Rp 0</span>
                         </div>
                     </div>
@@ -261,12 +250,12 @@
             <div class="mt-24 grid grid-cols-2 gap-16 text-center">
                 <div>
                     <p contenteditable="true" id="to-label" class="text-[10px] uppercase font-black text-[#d2b48c] mb-20 tracking-[0.2em]">Diterima Oleh,</p>
-                    <div class="border-b-2 border-[#eaddd0] mx-auto w-52 mb-2"></div>
+                    <div class="border-b-2 border-[#eaddd0] mx-auto w-48 mb-2"></div>
                     <div contenteditable="true" id="to-name" class="font-black text-[#5d4037] tracking-tight uppercase">( Nama Penerima )</div>
                 </div>
                 <div>
                     <p contenteditable="true" id="from-label" class="text-[10px] uppercase font-black text-[#d2b48c] mb-20 tracking-[0.2em]">Hormat Kami,</p>
-                    <div class="border-b-2 border-[#eaddd0] mx-auto w-52 mb-2"></div>
+                    <div class="border-b-2 border-[#eaddd0] mx-auto w-48 mb-2"></div>
                     <div contenteditable="true" id="from-name" class="font-black text-[#5d4037] tracking-tight uppercase">( Penanggung Jawab )</div>
                 </div>
             </div>
@@ -322,6 +311,12 @@
             }
         });
 
+        const autoResize = (el) => {
+            if (!el) return;
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        };
+
         window.addItem = () => {
             items.push({ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false });
             renderItems();
@@ -344,17 +339,13 @@
             }
         };
 
-        const autoResize = (el) => {
-            if (!el) return;
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
-        };
-
+        // SURGICAL UPDATE: Update values without full re-render
         window.updateItem = (id, field, val) => {
             const item = items.find(i => i.id === id);
             if (item) {
                 item[field] = (field === 'quantity' || field === 'price') ? (parseFloat(val) || 0) : val;
                 
+                // Only update the specific DOM elements for calculations
                 const rowTotalEl = document.getElementById(`row-total-val-${id}`);
                 if (rowTotalEl) {
                     rowTotalEl.textContent = formatCurrency(item.quantity * item.price);
@@ -364,6 +355,7 @@
                     const el = document.getElementById(`desc-${id}`);
                     autoResize(el);
                     
+                    // Trigger row addition if typing in the last empty row
                     if (val.trim() !== '') {
                         const idx = items.indexOf(item);
                         if (idx === items.length - 1) {
@@ -397,20 +389,20 @@
                 }
 
                 tr.innerHTML = `
-                    <td class="py-4 px-3 text-center text-xs text-[#a1887f] font-bold align-top">
+                    <td class="py-4 px-2 text-center text-xs text-[#a1887f] font-bold align-top">
                         ${displayNo}
                     </td>
                     <td class="py-4 px-4 relative align-top">
                         <div class="no-print absolute -left-12 top-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                            <button onclick="removeItem(${item.id})" title="Hapus Baris" class="bg-red-50 text-red-400 p-1 rounded hover:bg-red-400 hover:text-white">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <button onclick="removeItem(${item.id})" class="bg-red-50 text-red-500 p-1 rounded hover:bg-red-500 hover:text-white">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
-                            <button onclick="toggleHeader(${item.id})" title="${item.isHeader ? 'Jadikan Sub-item' : 'Jadikan Header Area'}" class="p-1 rounded ${item.isHeader ? 'bg-[#a0522d] text-white' : 'bg-[#eaddd0] text-[#8d6e63] hover:bg-[#d2b48c]'}">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <button onclick="toggleHeader(${item.id})" class="p-1 rounded ${item.isHeader ? 'bg-[#a0522d] text-white' : 'bg-[#eaddd0] text-[#8d6e63] hover:bg-[#d2b48c]'}">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
                             </button>
                         </div>
                         <textarea id="desc-${item.id}" 
-                            placeholder="${item.isHeader ? 'Nama Area/Lantai...' : 'Rincian pekerjaan...'}" 
+                            placeholder="${item.isHeader ? 'Nama Area...' : 'Rincian...'}" 
                             oninput="updateItem(${item.id}, 'description', this.value)" 
                             class="item-textarea ${item.isHeader ? 'font-extrabold text-[#8b5a2b]' : 'font-semibold text-[#5d4037]'}">${item.description}</textarea>
                     </td>
@@ -497,13 +489,13 @@
             }
 
             document.getElementById('p-subtotal').textContent = formatCurrency(subtotal);
-            document.getElementById('p-discount-label').textContent = discountMode === 'percent' ? `Potongan Diskon (${discVal}%):` : 'Potongan Diskon:';
+            document.getElementById('p-discount-label').textContent = discountMode === 'percent' ? `Diskon (${discVal}%):` : 'Diskon:';
             document.getElementById('p-discount-amount').textContent = `- ${formatCurrency(discAmount)}`;
             document.getElementById('p-total').textContent = formatCurrency(invoiceTotal);
             
             if (dpEnabled) {
                 const dpInputVal = parseFloat(document.getElementById('dp-input').value) || 0;
-                document.getElementById('p-dp-label').textContent = dpMode === 'percent' ? `DP Dibayarkan (${dpInputVal}%):` : 'DP Dibayarkan:';
+                document.getElementById('p-dp-label').textContent = dpMode === 'percent' ? `DP (${dpInputVal}%):` : 'DP:';
                 document.getElementById('p-dp-amount').textContent = `- ${formatCurrency(dpAmount)}`;
                 document.getElementById('p-balance').textContent = formatCurrency(remainingBalance);
             }
@@ -562,20 +554,19 @@
             currentDraftId = null;
             document.getElementById('inv-no').textContent = 'INV/' + new Date().getFullYear() + '/' + Math.floor(Math.random()*1000).toString().padStart(3,'0');
             document.getElementById('inv-date').textContent = new Intl.DateTimeFormat('id-ID', {day:'numeric', month:'short', year:'numeric'}).format(new Date());
-            document.getElementById('from-info').textContent = 'Nama Perusahaan\nAlamat\nKontak';
-            document.getElementById('to-info').textContent = 'Nama Penerima\nAlamat Customer';
-            document.getElementById('invoice-notes').textContent = '* Pembayaran dapat dikirim melalui Rekening Bank XXXX: 1234-5678-90 (A/N Nama Anda)';
+            document.getElementById('from-info').textContent = 'Nama Perusahaan Anda\nAlamat';
+            document.getElementById('to-info').textContent = 'Nama Customer\nAlamat';
             document.getElementById('discount-input').value = 0;
             document.getElementById('dp-input').value = 0;
             if (dpEnabled) toggleDP(); 
             removeLogo();
             items = [{ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false }];
             renderItems();
-            showToast("Invoice Baru Kosong Dibuat");
+            showToast("Baru");
         };
 
         window.saveDraft = async () => {
-            if (!currentUser) return showToast("Koneksi Error (Offline)");
+            if (!currentUser) return showToast("Offline");
             const id = currentDraftId || crypto.randomUUID();
             const data = {
                 invTitle: document.getElementById('inv-title').textContent,
@@ -602,8 +593,8 @@
                 const path = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id);
                 await setDoc(path, data);
                 currentDraftId = id;
-                showToast("Berhasil Disimpan ke Cloud");
-            } catch (e) { showToast("Gagal Menyimpan"); }
+                showToast("Tersimpan");
+            } catch (e) { showToast("Gagal"); }
         };
 
         function listenToDrafts() {
@@ -657,12 +648,12 @@
                 setMode('discount', discountMode);
                 setMode('dp', dpMode);
                 renderItems();
-                showToast("Draf Berhasil Dimuat");
+                showToast("Dimuat");
             }, {onlyOnce: true});
         };
 
         window.deleteDraft = async (id) => {
-            if (!confirm("Hapus draf ini dari Cloud?")) return;
+            if (!confirm("Hapus?")) return;
             await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'invoices', id));
             if (currentDraftId === id) createNewInvoice();
         };
@@ -679,7 +670,7 @@
             if (s === 'connected') {
                 el.className = "flex items-center gap-1.5 text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-[#f1f8e9] text-[#558b2f] border border-[#c5e1a5]";
                 dot.className = "w-2 h-2 rounded-full bg-[#8bc34a] animate-pulse";
-                el.lastChild.textContent = "Cloud Aktif";
+                el.lastChild.textContent = "Online";
             } else {
                 el.className = "flex items-center gap-1.5 text-[10px] font-bold uppercase px-3 py-1 rounded-full bg-red-50 text-red-400 border border-red-100";
                 dot.className = "w-2 h-2 rounded-full bg-red-500";

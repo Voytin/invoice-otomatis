@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice Praktis - DP Bertahap & Toolbar Perataan</title>
+    <title>Invoice Praktis - DP Bertahap & Potongan Diskon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -213,16 +213,22 @@
                         <span id="p-subtotal">Rp 0</span>
                     </div>
 
-                    <!-- Discount Section -->
+                    <!-- Discount Section (Edit Mode) -->
                     <div class="no-print flex items-center justify-between bg-[#fdfaf6] p-2 rounded-xl border border-[#eaddd0] mx-4">
                         <div class="flex items-center gap-2">
-                            <span class="text-[9px] font-black text-[#a1887f] uppercase">Diskon</span>
+                            <span class="text-[9px] font-black text-[#a1887f] uppercase">Set Diskon</span>
                             <div class="flex bg-white rounded-md border border-[#eaddd0] overflow-hidden text-[9px]">
                                 <button onclick="setDiscountMode('percent')" id="disc-mode-pct" class="px-2 py-1 font-black bg-[#a0522d] text-white">%</button>
                                 <button onclick="setDiscountMode('fixed')" id="disc-mode-fix" class="px-2 py-1 font-black text-[#d2b48c]">Rp</button>
                             </div>
                         </div>
                         <input type="number" id="discount-input" value="0" oninput="calculateTotals()" class="bg-transparent text-right font-black text-[#a0522d] outline-none w-24 text-sm">
+                    </div>
+
+                    <!-- Discount Amount (Display Mode & Print) -->
+                    <div id="p-discount-row" class="hidden flex justify-between items-center text-xs font-bold text-[#c62828] px-4">
+                        <span id="p-discount-label">Potongan Diskon:</span>
+                        <span id="p-discount-amount">- Rp 0</span>
                     </div>
 
                     <div class="flex justify-between items-center text-2xl font-black text-white wood-gradient p-5 rounded-2xl shadow-xl mx-4">
@@ -292,9 +298,9 @@
 
         let currentUser = null;
         let currentDraftId = null;
-        let activeItemId = null; // Track focused item for alignment toolbar
+        let activeItemId = null; 
         let items = [{ id: Date.now(), description: '', quantity: 1, price: 0, unit: '', isHeader: false, alignment: 'left' }];
-        let paymentStages = []; // { id, label, value, mode: 'percent'|'fixed', date: 'YYYY-MM-DD' }
+        let paymentStages = []; 
         let discountMode = 'percent';
         let logoBase64 = null;
         let logoWidth = 160;
@@ -356,13 +362,9 @@
         window.setActiveItem = (id) => {
             activeItemId = id;
             const item = items.find(i => i.id === id);
-            
-            // Highlight active row visually
             document.querySelectorAll('#items-body tr').forEach(row => row.classList.remove('active-row'));
             const currentRow = document.getElementById(`row-${id}`);
             if (currentRow) currentRow.classList.add('active-row');
-            
-            // Update Toolbar Status & Buttons
             updateToolbarUI(item.alignment);
             document.getElementById('toolbar-status').textContent = `Mengatur perataan baris ke-${items.indexOf(item) + 1}`;
         };
@@ -373,8 +375,6 @@
             if (item) {
                 item.alignment = align;
                 updateToolbarUI(align);
-                
-                // Update only the textarea alignment without full re-render to keep focus
                 const textarea = document.getElementById(`area-${activeItemId}`);
                 if (textarea) {
                     textarea.classList.remove('text-left', 'text-center', 'text-right');
@@ -389,7 +389,6 @@
                 'center': document.getElementById('align-btn-center'),
                 'right': document.getElementById('align-btn-right')
             };
-            
             Object.keys(btns).forEach(key => {
                 if (key === align) {
                     btns[key].classList.add('bg-[#8b5a2b]', 'text-white');
@@ -401,7 +400,7 @@
             });
         }
 
-        // DP BERTAP (STAGES) FUNCTIONS
+        // DPBERTAP FUNCTIONS
         window.addStage = () => {
             const today = new Date().toISOString().split('T')[0];
             paymentStages.push({ 
@@ -489,7 +488,6 @@
         window.renderStages = () => {
             const list = document.getElementById('stages-list');
             list.innerHTML = '';
-            
             paymentStages.forEach(s => {
                 const div = document.createElement('div');
                 div.className = "group flex flex-col gap-1 mx-4 mb-3 border-b border-[#f7f3f0] pb-2 last:border-none";
@@ -524,8 +522,8 @@
 
         window.calculateTotals = () => {
             const subtotal = items.reduce((sum, i) => sum + (i.isHeader ? 0 : (i.quantity * i.price)), 0);
-            const discVal = parseFloat(document.getElementById('discount-input').value) || 0;
-            const discAmount = discountMode === 'percent' ? (subtotal * discVal / 100) : discVal;
+            const discInputVal = parseFloat(document.getElementById('discount-input').value) || 0;
+            const discAmount = discountMode === 'percent' ? (subtotal * discInputVal / 100) : discInputVal;
             const total = Math.max(0, subtotal - discAmount);
 
             let totalPaidStages = 0;
@@ -537,6 +535,20 @@
             const balance = Math.max(0, total - totalPaidStages);
 
             document.getElementById('p-subtotal').textContent = formatCurrency(subtotal);
+            
+            // LOGIC TAMPILKAN HARGA DISKON
+            const pDiscRow = document.getElementById('p-discount-row');
+            const pDiscLabel = document.getElementById('p-discount-label');
+            const pDiscAmount = document.getElementById('p-discount-amount');
+            
+            if (discAmount > 0) {
+                pDiscRow.classList.remove('hidden');
+                pDiscLabel.textContent = discountMode === 'percent' ? `Potongan Diskon (${discInputVal}%):` : 'Potongan Diskon:';
+                pDiscAmount.textContent = `- ${formatCurrency(discAmount)}`;
+            } else {
+                pDiscRow.classList.add('hidden');
+            }
+
             document.getElementById('p-total').textContent = formatCurrency(total);
             document.getElementById('p-balance').textContent = formatCurrency(balance);
             
@@ -550,7 +562,6 @@
             const discVal = parseFloat(document.getElementById('discount-input').value) || 0;
             const discAmount = discountMode === 'percent' ? (subtotal * discVal / 100) : discVal;
             const total = subtotal - discAmount;
-            
             const amt = s.mode === 'percent' ? (total * s.value / 100) : s.value;
             return formatCurrency(amt);
         }
